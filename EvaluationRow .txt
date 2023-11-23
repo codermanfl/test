@@ -1,0 +1,37 @@
+select * from EvaluationRow er
+left join (select * from ITRoll itr 
+ join IndicatorTime it on it.IndicatorTimeCode=itr.IndicatorTimeRef) sd on  sd.RollRef=er.rollref
+and er.IndicatorRef=sd.indicatorRef
+join Roll r on r.RollCode=er.rollref
+join person p on r.PersonRef=p.PersonId
+where personid=8
+
+
+
+
+
+
+If object_id ('TempDb..#temp')is not null drop table #temp  
+select sd.periodtimeref,p.personid,i.IndicatorRef,SUM(isnull(er.FirstScore,0)*isnull(er.weight,0)) IndicatorSum ,Sum(er.weight) IndicatorCount 
+	Into #Temp
+from EvaluationRow er
+	join (select * from ITRoll itr 
+	join IndicatorTime it on it.IndicatorTimeCode=itr.IndicatorTimeRef) sd on  sd.RollRef=er.rollref
+		and er.IndicatorRef=sd.indicatorRef
+	join Roll r on r.RollCode=er.rollref
+	join person p on r.PersonRef=p.PersonId
+	join indicator i on i.indicatorid=er.IndicatorRef
+		
+	where i.indicatorref>0 And ISNULL(er.FirstScore,0)>0
+
+		group by p.personid,PeriodTimeRef,i.IndicatorRef
+
+select mm = case when isnull(IndicatorCount,0)>0 then cast (IndicatorSum /(1.0* IndicatorCount)as decimal (18,3)) else 0 End,* from EvaluationRow er
+left join (select * from ITRoll itr 
+ join IndicatorTime it on it.IndicatorTimeCode=itr.IndicatorTimeRef) sd on  sd.RollRef=er.rollref
+and er.IndicatorRef=sd.indicatorRef
+join Roll r on r.RollCode=er.rollref
+join person p on r.PersonRef=p.PersonId
+join indicator i on i.indicatorid=er.IndicatorRef
+Left join #Temp t on i.IndicatorId=t.IndicatorRef And t.PeriodTimeRef=sd.PeriodTimeRef
+where p.personid=8
