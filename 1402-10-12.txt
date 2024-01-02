@@ -1,0 +1,85 @@
+USE [a_mfz]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_Get_EvaluationRow]    Script Date: 01/02/2024 05:15:00 ب.ظ ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- Created by fl
+ALTER Procedure [dbo].[sp_Get_EvaluationRow]
+@EvaluationCode int ,
+@Guid nvarchar(200)
+
+As
+SET NOCOUNT ON
+
+Declare @PersonId int =0
+
+select @PersonId = PersonId From Person Where Guid=@Guid 
+If object_id ('TempDb..#temp')is not null drop table #temp  
+
+select h.periodtimeref
+  , i.IndicatorId
+  , SUM(isnull(er.FirstScore,0)*isnull(er.weight,0)) IndicatorSum
+  , Sum(er.weight) IndicatorCount 
+Into #Temp 
+from EvaluationRow er Join EvaluationHeader h on er.EvaluationRef=h.EvaluationCode
+join (
+    select ITRollCode,IndicatorTimeRef,RollRef,IndicatorTimeCode,PeriodTimeRef,indicatorRef from ITRoll itr 
+	join IndicatorTime it on it.IndicatorTimeCode=itr.IndicatorTimeRef
+	) sd on  sd.RollRef=er.rollref and er.IndicatorRef=sd.IndicatorRef
+join Roll r on r.RollCode=er.rollref
+join person p on r.PersonRef=p.PersonId
+join indicator i on i.indicatorid=er.IndicatorRef
+where i.indicatorref>0 And ISNULL(er.FirstScore,0)>0 And er.EvaluationRef=@EvaluationCode
+group by h.PeriodTimeRef,i.IndicatorId
+
+Select er.EvaluationRowCode TempRowCode, (p.fname+' '+p.lname) SubPerson
+  , h.periodtimeref
+  , p.personid
+  , i.IndicatorRef, i.IndicatorId
+  , IsNull(er.FirstScore,0)*isnull(er.weight,0) IndicatorSum
+  , er.weight IndicatorCount Into #Temp2
+From EvaluationRow er Join EvaluationHeader h on er.EvaluationRef=h.EvaluationCode
+Join (
+    Select ITRollCode,IndicatorTimeRef,RollRef,IndicatorTimeCode,PeriodTimeRef,indicatorRef from ITRoll itr 
+	Join IndicatorTime it on it.IndicatorTimeCode=itr.IndicatorTimeRef
+	) sd on  sd.RollRef=er.rollref and er.IndicatorRef=sd.IndicatorRef
+	join Roll r on r.RollCode=er.rollref
+	join person p on r.PersonRef=p.PersonId
+	join indicator i on i.indicatorid=er.IndicatorRef
+	where i.indicatorref>0 And ISNULL(er.FirstScore,0)>0 And er.EvaluationRef=@EvaluationCode
+
+IF @PersonId>0
+	Begin
+		select t.TempRowCode, t.SubPerson 
+--		, IndAvrPoint = case when isnull(tt.IndicatorCount,0)>0 then cast (tt.IndicatorSum /(1.0* tt.IndicatorCount)as decimal (18,3)) else 0 End
+		, AvrPoint = case when isnull(t.IndicatorCount,0)>0 then cast (t.IndicatorSum /(1.0* t.IndicatorCount)as decimal (18,3)) else 0 End
+		, *
+		from EvaluationRow er Join EvaluationHeader h on er.EvaluationRef=h.EvaluationCode
+		left join (select ITRollCode,IndicatorTimeRef,RollRef,IndicatorTimeCode,PeriodTimeRef,indicatorRef from ITRoll itr join IndicatorTime it on it.IndicatorTimeCode=itr.IndicatorTimeRef
+		   ) sd on  sd.RollRef=er.rollref
+		and er.IndicatorRef=sd.indicatorRef
+		join Roll r on r.RollCode=er.rollref
+		join person p on r.PersonRef=p.PersonId
+		join indicator i on i.indicatorid=er.IndicatorRef
+		Left Join #Temp2 t on er.Indicatorref=t.IndicatorId And t.PeriodTimeRef=h.PeriodTimeRef
+--		Left Join #Temp tt on er.Indicatorref=tt.IndicatorId And tt.PeriodTimeRef=h.PeriodTimeRef
+		where p.personid=@PersonId And er.EvaluationRef=@EvaluationCode
+	End
+Else
+	Begin
+		select t.TempRowCode, t.SubPerson ,AvrPoint = case when isnull(IndicatorCount,0)>0 then cast (IndicatorSum /(1.0* IndicatorCount)as decimal (18,3)) else 0 End,* 
+		from EvaluationRow er Join EvaluationHeader h on er.EvaluationRef=h.EvaluationCode
+		left join (select ITRollCode,IndicatorTimeRef,RollRef,IndicatorTimeCode,PeriodTimeRef,indicatorRef from ITRoll itr 
+		join IndicatorTime it on it.IndicatorTimeCode=itr.IndicatorTimeRef) sd on  sd.RollRef=er.rollref
+		and er.IndicatorRef=sd.indicatorRef
+		join Roll r on r.RollCode=er.rollref
+		join person p on r.PersonRef=p.PersonId
+		join indicator i on i.indicatorid=er.IndicatorRef
+		Left join #Temp2 t on i.IndicatorId=t.IndicatorRef And t.PeriodTimeRef=h.PeriodTimeRef
+		where er.EvaluationRef=@EvaluationCode
+
+	End
+
