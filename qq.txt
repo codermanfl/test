@@ -1,0 +1,20 @@
+declare @av decimal(10,2)
+ if   exists( select top 1 * from EvaluationRow er where EvaluationRef=5018 and FirstScore is null)
+ select @av=0 
+ else
+select 
+
+
+
+@av=sum (r.weight*rp.weight* isnull(er.FirstScore,0))/Sum(r.weight*rp.weight)*20 
+
+
+--EvaluationRowCode,r.IndicatorName,r.state,r.IndicatorId,r.weight bw,rp.weight pw ,er.FirstScore 
+from EvaluationRow er
+join Indicator r on r.Indicatorid= er.IndicatorRef
+join Indicator rp on rp.Indicatorid= r.IndicatorRef
+where EvaluationRef=5018 and r.state=1
+--and isnull(er.FirstScore,0)>0
+
+
+
