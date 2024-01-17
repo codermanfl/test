@@ -1,0 +1,117 @@
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'farsiNumber'
+})
+export class FarsiNumberPipe implements PipeTransform {
+  transform(value: number | string): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    const farsiDigits: { [key: string]: string } = {
+      '0': '۰',
+      '1': '۱',
+      '2': '۲',
+      '3': '۳',
+      '4': '۴',
+      '5': '۵',
+      '6': '۶',
+      '7': '۷',
+      '8': '۸',
+      '9': '۹'
+    };
+
+    const stringValue = String(value);
+    let result = '';
+
+    for (let i = 0; i < stringValue.length; i++) {
+      const char = stringValue[i];
+      result += farsiDigits[char] !== undefined ? farsiDigits[char] : char;
+    }
+
+    return result;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { OrderSettingComponent } from './order-setting/order-setting.component';
+import { OrderItemComponent } from './order-item/order-item.component';
+import { OrderBasketComponent } from './order-basket/order-basket.component';
+import { OrderGroupComponent } from './order-group/order-group.component';
+import { OrderMainComponent } from './order-main/order-main.component';
+import { ModelModule } from '../model/model.module';
+import { AboutusComponent } from './aboutus/aboutus.component';
+import { HomeComponent } from './home/home.component';
+import { HeaderComponent } from './header/header.component';
+import { FooterComponent } from './footer/footer.component';
+import { OrderDialogComponent } from './order-dialog/order-dialog.component';
+import { FarsiNumberPipe } from '../model/Number';
+import { OrderBasketItemComponent } from './order-basketitem/order-basketitem.component';
+import { RouterModule } from '@angular/router';
+import { MenuFaComponent } from './menu-fa/menu-fa.component';
+import { MenuEnComponent } from './menu-en/menu-en.component';
+import { ItemEnComponent } from './item-en/item-en.component';
+import { ItemFaComponent } from './item-fa/item-fa.component';
+import { DialogFaComponent } from './dialog-fa/dialog-fa.component';
+import { DialogEnComponent } from './dialog-en/dialog-en.component';
+import { MatIconModule } from '@angular/material/icon';
+
+
+
+@NgModule({
+  declarations: [
+    OrderMainComponent,
+    OrderGroupComponent,
+    OrderBasketComponent,
+    OrderItemComponent,
+    OrderSettingComponent,
+    OrderDialogComponent,
+    AboutusComponent,
+    HomeComponent,
+    HeaderComponent,
+    FooterComponent,
+    FarsiNumberPipe,
+    OrderBasketItemComponent,
+    MenuFaComponent,
+    MenuEnComponent,
+
+    DialogFaComponent,
+    DialogEnComponent,
+    ItemEnComponent,
+    ItemFaComponent,
+   
+
+  ],
+  imports: [
+    CommonModule,HttpClientModule,FormsModule,ModelModule,RouterModule ,MatIconModule,
+    
+  ]
+
+})
+export class OrderModule { }
+
+
+
